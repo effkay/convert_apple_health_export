@@ -1,4 +1,3 @@
-require 'byebug'
 require 'nokogiri'
 require 'csv'
 
@@ -19,10 +18,13 @@ end
 module ParseXML
   extend self
 
+  XPATH_DIASTOLIC = "//Record[contains(@type,'HKQuantityTypeIdentifierBloodPressureDiastolic')]"
+  XPATH_SYSTOLIC = "//Record[contains(@type,'HKQuantityTypeIdentifierBloodPressureSystolic')]"
+
   def call(path)
     document = File.open(path) { |f| Nokogiri::XML(f) }
-    diastolic_records = document.xpath("//Record[contains(@type,'HKQuantityTypeIdentifierBloodPressureDiastolic')]").map(&:to_h)
-    systolic_records = document.xpath("//Record[contains(@type,'HKQuantityTypeIdentifierBloodPressureSystolic')]").map(&:to_h)
+    diastolic_records = document.xpath(XPATH_DIASTOLIC).map(&:to_h)
+    systolic_records = document.xpath(XPATH_SYSTOLIC).map(&:to_h)
 
     [diastolic_records, systolic_records]
   end
@@ -31,8 +33,11 @@ end
 module CreateCSV
   extend self
 
-  def call(records)
-    CSV.open('export.csv', 'wb') do |csv|
+  def call(records, path)
+    records = records.sort_by(&:time)
+
+    CSV.open(path, 'wb') do |csv|
+      csv << %w[time diastolic systolic]
       records.each do |record|
         csv << record.to_csv
       end
@@ -44,28 +49,33 @@ module JoinRecords
   extend self
 
   def call(diastolic_records, systolic_records)
-    diastolic_records.each_with_object([]) do |record, accu|
-      matching_systolic_value = systolic_records.find { |sr| sr['startDate'] == record['startDate'] }['value']
-      accu << Record.new(record['value'], matching_systolic_value, record['startDate'])
+    records = diastolic_records.each_with_object([]) do |record, accu|
+      pair = find_matching_value(record['startDate'], systolic_records)
+      accu << Record.new(record['value'], pair, record['startDate'])
     end
+
+    records.uniq { |p| p.time }
+  end
+
+  private
+
+  def find_matching_value(date, records)
+    matching_systolic_item = records.find { |sr| sr['startDate'] == date }
+    matching_systolic_item['value']
   end
 end
 
 module ConvertXML
   extend self
 
-  def call(path)
-    diastolic_records, systolic_records = ParseXML.call(path)
+  def call(input_path, export_path)
+    diastolic_records, systolic_records = ParseXML.call(input_path)
     records = JoinRecords.call(diastolic_records, systolic_records)
 
     puts "Found #{records.count} records, creating CSV"
 
-    CreateCSV.call(records)
+    CreateCSV.call(records, export_path)
   end
 end
 
-ConvertXML.call('export.xml')
-
-# TODO: pass path to ConvertXML
-# TODO: pass export csv path
-# TODO: sort records by time
+ConvertXML.call('export.xml', 'export.csv')
