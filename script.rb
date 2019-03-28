@@ -1,5 +1,6 @@
 require 'byebug'
 require 'nokogiri'
+require 'csv'
 
 class Record
   attr_accessor :diastolic, :systolic, :time
@@ -8,6 +9,10 @@ class Record
     @diastolic = diastolic
     @systolic = systolic
     @time = time
+  end
+
+  def to_csv
+    [time, diastolic, systolic]
   end
 end
 
@@ -23,6 +28,18 @@ module ParseXML
   end
 end
 
+module CreateCSV
+  extend self
+
+  def call(records)
+    CSV.open('export.csv', 'wb') do |csv|
+      records.each do |record|
+        csv << record.to_csv
+      end
+    end
+  end
+end
+
 module JoinRecords
   extend self
 
@@ -34,9 +51,17 @@ module JoinRecords
   end
 end
 
+#===============================================================================
 
-diastolic_records, systolic_records = ParseXML.call('export.xml')
-records = JoinRecords.call(diastolic_records, systolic_records)
+module ConvertXML
+  extend self
 
-puts "Found #{records.count} records"
-puts records.first.inspect
+  def call
+    diastolic_records, systolic_records = ParseXML.call('export.xml')
+    records = JoinRecords.call(diastolic_records, systolic_records)
+
+    puts "Found #{records.count} records, creating CSV"
+
+    CreateCSV.call(records)
+  end
+end
