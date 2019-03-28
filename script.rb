@@ -51,13 +51,11 @@ module JoinRecords
   end
 end
 
-#===============================================================================
-
 module ConvertXML
   extend self
 
-  def call
-    diastolic_records, systolic_records = ParseXML.call('export.xml')
+  def call(path)
+    diastolic_records, systolic_records = ParseXML.call(path)
     records = JoinRecords.call(diastolic_records, systolic_records)
 
     puts "Found #{records.count} records, creating CSV"
@@ -65,3 +63,8 @@ module ConvertXML
     CreateCSV.call(records)
   end
 end
+
+ConvertXML.call('export.xml')
+
+# TODO: pass path to ConvertXML
+# TODO: pass export csv path
