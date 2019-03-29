@@ -1,5 +1,6 @@
 require 'nokogiri'
 require 'csv'
+require 'time'
 
 class Record
   attr_accessor :diastolic, :systolic, :time
@@ -11,7 +12,13 @@ class Record
   end
 
   def to_csv
-    [time, diastolic, systolic]
+    [formatted_time, diastolic, systolic]
+  end
+
+  private
+
+  def formatted_time
+    Time.parse(time).strftime('%Y-%d-%m %H:%M:%S').to_s
   end
 end
 
@@ -34,8 +41,6 @@ module CreateCSV
   extend self
 
   def call(records, path)
-    records = records.sort_by(&:time)
-
     CSV.open(path, 'wb') do |csv|
       csv << %w[time diastolic systolic]
       records.each do |record|
@@ -54,7 +59,7 @@ module JoinRecords
       accu << Record.new(record['value'], pair, record['startDate'])
     end
 
-    records.uniq { |p| p.time }
+    records.uniq { |p| p.time }.sort_by(&:time)
   end
 
   private
