@@ -1,19 +1,19 @@
 module BuildRecords
   extend self
 
-  def call(diastolic_records, systolic_records)
-    records = diastolic_records.each_with_object([]) do |record, accu|
-      pair = find_matching_value(record["startDate"], systolic_records)
-      accu << Record.new(record["value"], pair, record["startDate"])
+  def call(diastolic_entries, systolic_entries)
+    entries = diastolic_entries.each_with_object([]) do |entry, accu|
+      pair = find_matching_value(entry["startDate"], systolic_entries)
+      accu << entry.new(entry["value"], pair, entry["startDate"])
     end
 
-    records.uniq { |p| p.time }.sort_by(&:time)
+    entries.uniq { |p| p.time }.sort_by(&:time)
   end
 
   private
 
-  def find_matching_value(date, records)
-    matching_systolic_item = records.find { |sr| sr["startDate"] == date }
+  def find_matching_value(date, entries)
+    matching_systolic_item = entries.find { |sr| sr["startDate"] == date }
     matching_systolic_item["value"]
   end
 end

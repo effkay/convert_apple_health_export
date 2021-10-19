@@ -8,9 +8,9 @@ module ParseXML
 
   def call(path)
     document = File.open(path) { |f| Nokogiri::XML(f) }
-    diastolic_records = document.xpath(XPATH_DIASTOLIC).map(&:to_h)
-    systolic_records = document.xpath(XPATH_SYSTOLIC).map(&:to_h)
+    diastolic_entries = document.xpath(XPATH_DIASTOLIC).map(&:to_h)
+    systolic_entries = document.xpath(XPATH_SYSTOLIC).map(&:to_h)
 
-    [diastolic_records, systolic_records]
+    [diastolic_entries, systolic_entries]
   end
 end
