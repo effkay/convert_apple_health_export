@@ -1,4 +1,4 @@
-module JoinRecords
+module BuildRecords
   extend self
 
   def call(diastolic_records, systolic_records)
