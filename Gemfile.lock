@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    convert_apple_health_export (0.0.1)
+    convert_apple_health_export (0.1.0)
       nokogiri
 
 GEM
