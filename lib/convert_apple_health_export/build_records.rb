@@ -4,7 +4,7 @@ module BuildRecords
   def call(diastolic_entries, systolic_entries)
     entries = diastolic_entries.each_with_object([]) do |entry, accu|
       pair = find_matching_value(entry["startDate"], systolic_entries)
-      accu << entry.new(entry["value"], pair, entry["startDate"])
+      accu << Record.new(entry["value"], pair, entry["startDate"])
     end
 
     entries.uniq { |p| p.time }.sort_by(&:time)
